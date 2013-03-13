@@ -7,7 +7,6 @@ import javax.microedition.khronos.egl.EGLDisplay;
 
 import android.os.Bundle;
 import android.app.Activity;
-import android.view.Display;
 import android.view.Menu;
 import android.widget.TextView;
 
@@ -21,8 +20,6 @@ public class GlesInfoActivity extends Activity {
 	    TextView text = (TextView) findViewById(R.id.maintext);
 	    text.append("EGL:\n");
 	    
-		Display disp = getWindowManager().getDefaultDisplay();
-
 	    EGL10 egl = (EGL10) EGLContext.getEGL();
 	    EGLDisplay dpy = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
 	    int[] version = new int[2];
