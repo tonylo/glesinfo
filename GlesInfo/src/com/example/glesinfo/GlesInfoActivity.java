@@ -6,31 +6,44 @@ import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.opengles.GL10;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.opengl.GLES20;
 import android.opengl.GLES11;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.os.SystemClock;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Menu;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.LinearLayout;
 
 public class GlesInfoActivity extends Activity {
 
     static String TAG = "GLESINFO";
     private GLSurfaceView mGLView;
+    private TextView mTextView;
+    boolean mNoGLView = false;
 
     class ClearRenderer implements GLSurfaceView.Renderer {
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
             // Do nothing special.
+            dumpGLES();
+            weAreDone();
         }
 
-        public void onSurfaceChanged(GL10 gl, int w, int h) {
+        public void dumpGLES() {
 
             output("GLES11:");
             glPrint("GLES11.GL_MAX_TEXTURE_SIZE", GLES11.GL_MAX_TEXTURE_SIZE);
@@ -56,18 +69,59 @@ public class GlesInfoActivity extends Activity {
             glPrint("GLES20.GL_MAX_VIEWPORT_DIMS", GLES20.GL_MAX_VIEWPORT_DIMS, 2);
         }
 
+        public void onSurfaceChanged(GL10 gl, int w, int h) {
+        }
+
         public void onDrawFrame(GL10 gl) {
         }
     }
 
     final static int kMaxConfs = 100;
+
+    protected void onStart() {
+        super.onStart();
+    }
+    protected void onResume() {
+        super.onResume();
+    }
+
+    public View onCreateView(View parent, String name, Context context, AttributeSet attrs) {
+        View mV = super.onCreateView(parent, name, context, attrs);
+
+        /*
+         * We enter this method a few times, but first time around the textview
+         * won't be ready, we then we close the glview hitting here again, at
+         * which point we want to dump the log
+         */
+        if (mNoGLView && mTextView != null) {
+            writeLogToTextView();
+        }
+        return mV;
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    protected void onPostResume() {
+        super.onPostResume();
+    }
+
+    protected void weAreDone() {
+        ViewGroup vg = (LinearLayout)findViewById(R.id.linearlayout1);
+        mNoGLView = true;
+        vg.removeView(mGLView);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mGLView = new GLSurfaceView(this);
+        setContentView(R.layout.activity_gles_info);
+        mGLView = (GLSurfaceView) findViewById(R.id.glSurfaceViewID);
+        mTextView = (TextView) findViewById(R.id.maintext);
         mGLView.setRenderer(new ClearRenderer());
-        setContentView(mGLView);
+
         output("EGL:");
 
         EGL10 egl = (EGL10) EGLContext.getEGL();
@@ -110,15 +164,15 @@ public class GlesInfoActivity extends Activity {
     }
 
     static boolean mLogInit = false;
-    File logFile = new File("/sdcard/glesinfo.txt");
+    File mLogFile = new File("/sdcard/glesinfo.txt");
 
     public void appendLog(String text) {
         if (mLogInit == false) {
-            if (logFile.exists()) {
-                logFile.delete();
+            if (mLogFile.exists()) {
+                mLogFile.delete();
             }
             try {
-                logFile.createNewFile();
+                mLogFile.createNewFile();
             } catch (IOException e) {
                 e.printStackTrace();
                 return;
@@ -127,12 +181,33 @@ public class GlesInfoActivity extends Activity {
         }
         try {
             //BufferedWriter for performance, true to set append to file flag
-            BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
+            BufferedWriter buf = new BufferedWriter(new FileWriter(mLogFile, true));
             buf.append(text);
             buf.newLine();
             buf.close();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void writeLogToTextView() {
+        BufferedReader br = null;
+        try {
+            String sCurrentLine;
+            br = new BufferedReader(new FileReader(mLogFile));
+            while ((sCurrentLine = br.readLine()) != null) {
+                mTextView.append(sCurrentLine);
+                mTextView.append("\n");
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (br != null)br.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
