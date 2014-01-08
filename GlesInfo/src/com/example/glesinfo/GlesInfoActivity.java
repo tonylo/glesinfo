@@ -135,7 +135,7 @@ public class GlesInfoActivity extends Activity {
 
         int[] value = new int[1];
         output("Number of configs: " + conf_ids[0] + "\n");
-        output("RGB sz alpha/depth/afmt/amask");
+        output("RGB sz alpha/depth/afmt/amask/samplesize/samplebuffers");
 
         for (int i = 0; i < conf_ids[0]; i++) {
             Boolean rv;
@@ -153,7 +153,11 @@ public class GlesInfoActivity extends Activity {
             int alpha_fmt = value[0];
             rv = egl.eglGetConfigAttrib(dpy, conf_egl[i], EGL10.EGL_ALPHA_MASK_SIZE, value);
             int alpha_mask_size = value[0];
-            String op = "" + red_size + green_size + blue_size + " " + alpha_size +  "/" + depth_size +  "/" + alpha_fmt +  "/" + alpha_mask_size;
+            rv = egl.eglGetConfigAttrib(dpy, conf_egl[i], EGL10.EGL_SAMPLE_BUFFERS, value);
+            int egl_sample_buffers = value[0];
+            rv = egl.eglGetConfigAttrib(dpy, conf_egl[i], EGL10.EGL_SAMPLES, value);
+            int egl_samples = value[0];
+            String op = "" + red_size + green_size + blue_size + " " + alpha_size +  "/" + depth_size +  "/" + alpha_fmt +  "/" + alpha_mask_size + "/" + egl_sample_buffers + "/" + egl_samples;
             output(op);
         }
     }
